@@ -5,7 +5,9 @@ package cmd
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
+	"time"
 	"wget/internal/config"
 	"wget/internal/downloader"
 	"wget/internal/utils"
@@ -39,6 +41,12 @@ Examples:
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
+		start := time.Now()
+		slog.Info("starting download", "url", opts.URL, "start_time", start.Format(time.RFC3339))
+		defer func() {
+			end := time.Now()
+			slog.Info("finished download", "url", opts.URL, "end_time", end.Format(time.RFC3339), "duration", end.Sub(start))
+		}()
 		var closeLog func() error
 		if opts.Background {
 			closeFn, err := utils.SetupBackgroundLogger("wget-log")

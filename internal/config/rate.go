@@ -1,8 +1,10 @@
 package config
 
 import (
+	"log/slog"
 	"net/http"
 	"time"
+	"wget/internal/utils"
 
 	"golang.org/x/time/rate"
 )
@@ -19,11 +21,21 @@ func (t *RateLimitTransport) RoundTrip(req *http.Request) (*http.Response, error
 		base = http.DefaultTransport
 	}
 
+	slog.Info("sending request, awaiting response...", "url", req.URL.String())
+
 	resp, err := base.RoundTrip(req)
 	if err != nil {
 		return nil, err
 	}
+	slog.Info("status", "code", resp.Status, "url", req.URL.String())
 	totalSize := resp.ContentLength
+
+	// content size: 56370 [~0.06MB]
+	if totalSize > 0 {
+		slog.Info("content size", "size", utils.FormatBytes(totalSize))
+	} else {
+		slog.Info("content size", "size", "unknown")
+	}
 	isUnkownSize := totalSize <= 0
 
 	var limiter *rate.Limiter
