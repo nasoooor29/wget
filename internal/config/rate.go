@@ -2,6 +2,7 @@ package config
 
 import (
 	"net/http"
+	"time"
 
 	"golang.org/x/time/rate"
 )
@@ -41,6 +42,7 @@ func (t *RateLimitTransport) RoundTrip(req *http.Request) (*http.Response, error
 		totalSizeBytes: totalSize,
 		currentBytes:   0,
 		isUnknownSize:  isUnkownSize,
+		startedAt:      time.Now(),
 		shouldRender:   t.ShouldRender,
 	}
 

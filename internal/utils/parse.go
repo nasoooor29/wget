@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func ParseRateLimit(value string) (int64, error) {
@@ -47,4 +48,17 @@ func FormatBytes(value int64) string {
 	}
 
 	return fmt.Sprintf("%d B", value)
+}
+
+func FormatDuration(value time.Duration) string {
+	if value < 0 {
+		value = 0
+	}
+
+	totalSeconds := int64(value.Seconds())
+	hours := totalSeconds / 3600
+	minutes := (totalSeconds % 3600) / 60
+	seconds := totalSeconds % 60
+
+	return fmt.Sprintf("%02d:%02d:%02d", hours, minutes, seconds)
 }

@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 	"wget/internal/utils"
 
 	"golang.org/x/time/rate"
@@ -21,6 +22,7 @@ type customReader struct {
 	totalSizeBytes int64
 	currentBytes   int64
 	isUnknownSize  bool
+	startedAt      time.Time
 	spinnerIndex   int
 	finishOnce     sync.Once
 	shouldRender   bool
@@ -99,7 +101,21 @@ func (r *customReader) renderBar(done bool) {
 		status = "Done"
 	}
 
-	line := fmt.Sprintf("%s [%s] %6.2f%% (%s/%s)", status, bar, percent*100, utils.FormatBytes(r.currentBytes), utils.FormatBytes(total))
+	eta := "ETA --:--:--"
+	if total > 0 && r.currentBytes > 0 && r.currentBytes < total {
+		elapsed := time.Since(r.startedAt)
+		if elapsed > 0 {
+			bytesRemaining := total - r.currentBytes
+			estimatedSeconds := float64(bytesRemaining) * float64(elapsed) / float64(r.currentBytes) / float64(time.Second)
+			if estimatedSeconds > 0 {
+				eta = fmt.Sprintf("ETA %s", utils.FormatDuration(time.Duration(estimatedSeconds)*time.Second))
+			}
+		}
+	} else if done {
+		eta = "ETA 00:00:00"
+	}
+
+	line := fmt.Sprintf("%s [%s] %6.2f%% (%s/%s) %s", status, bar, percent*100, utils.FormatBytes(r.currentBytes), utils.FormatBytes(total), eta)
 	r.writeLine(line, done)
 }
 
