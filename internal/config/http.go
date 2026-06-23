@@ -28,8 +28,11 @@ func NewHTTPClient(conf *Options) (*CustomHttpClient, error) {
 
 	return &CustomHttpClient{
 		Client: &http.Client{
-			Timeout:   time.Duration(conf.Timeout) * time.Second, // important: large downloads should not timeout
-			Transport: NewRateLimitTransport(rateLimit),
+			Timeout: time.Duration(conf.Timeout) * time.Second, // important: large downloads should not timeout
+			Transport: &RateLimitTransport{
+				BytesPerSec:  rateLimit,
+				ShouldRender: conf.ShouldRender,
+			},
 		},
 	}, nil
 }

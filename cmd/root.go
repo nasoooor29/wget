@@ -40,13 +40,16 @@ Examples:
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if opts.InputFile != "" {
+			opts.ShouldRender = true
 			return downloader.DownloadFromFile(&opts)
 		}
 
 		if opts.Mirror {
+			opts.ShouldRender = false
 			return mirror.MirrorWebsite(&opts)
 		}
 
+		opts.ShouldRender = true
 		return downloader.DownloadOne(&opts)
 	},
 }

@@ -12,4 +12,5 @@ type Options struct {
 	Exclude      []string
 	ConvertLinks bool
 	Timeout      int
+	ShouldRender bool
 }

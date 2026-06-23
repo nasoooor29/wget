@@ -23,6 +23,7 @@ type customReader struct {
 	isUnknownSize  bool
 	spinnerIndex   int
 	finishOnce     sync.Once
+	shouldRender   bool
 }
 
 func (r *customReader) Read(p []byte) (int, error) {
@@ -60,6 +61,9 @@ func (r *customReader) finish() {
 }
 
 func (r *customReader) render(done bool) {
+	if !r.shouldRender {
+		return
+	}
 	if r.isUnknownSize {
 		r.renderSpinner(done)
 		return

@@ -1,21 +1,15 @@
 package config
 
 import (
-	"log/slog"
 	"net/http"
 
 	"golang.org/x/time/rate"
 )
 
 type RateLimitTransport struct {
-	Base        http.RoundTripper
-	BytesPerSec int64
-}
-
-func NewRateLimitTransport(bytesPerSec int64) *RateLimitTransport {
-	return &RateLimitTransport{
-		BytesPerSec: bytesPerSec,
-	}
+	Base         http.RoundTripper
+	BytesPerSec  int64
+	ShouldRender bool
 }
 
 func (t *RateLimitTransport) RoundTrip(req *http.Request) (*http.Response, error) {
@@ -30,9 +24,6 @@ func (t *RateLimitTransport) RoundTrip(req *http.Request) (*http.Response, error
 	}
 	totalSize := resp.ContentLength
 	isUnkownSize := totalSize <= 0
-	if totalSize <= 0 {
-		slog.Debug("Content length is unknown, will use spinner for progress indication")
-	}
 
 	var limiter *rate.Limiter
 	if t.BytesPerSec > 0 {
@@ -50,6 +41,7 @@ func (t *RateLimitTransport) RoundTrip(req *http.Request) (*http.Response, error
 		totalSizeBytes: totalSize,
 		currentBytes:   0,
 		isUnknownSize:  isUnkownSize,
+		shouldRender:   t.ShouldRender,
 	}
 
 	return resp, nil
