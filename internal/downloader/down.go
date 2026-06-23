@@ -28,12 +28,6 @@ func DownloadOne(opts *config.Options) error {
 		return fmt.Errorf("download failed: %s", resp.Status)
 	}
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		slog.Error("failed to read response body", "err", err, "url", opts.URL)
-		return err
-	}
-
 	targetPath := resolveOutputPath(opts, resp.Request.URL)
 	slog.Debug("resolved output path", "path", targetPath)
 
@@ -49,7 +43,11 @@ func DownloadOne(opts *config.Options) error {
 	}
 	defer out.Close()
 
-	_, err = out.Write(body)
+	_, err = io.Copy(out, resp.Body)
+	if err != nil {
+		slog.Error("failed to write response body to file", "err", err, "path", targetPath)
+		return err
+	}
 	return err
 }
 
