@@ -10,9 +10,9 @@ import (
 	"strings"
 )
 
-func SetupLogger() {
+func SetupLogger(w io.Writer) {
 	logger := slog.New(NewDaLog(
-		os.Stdout,
+		w,
 		DaLogStyleLongType1,
 		&slog.HandlerOptions{
 			Level: slog.LevelDebug,
@@ -21,8 +21,19 @@ func SetupLogger() {
 	slog.SetDefault(logger)
 	slog.SetLogLoggerLevel(slog.LevelDebug)
 }
+
+func SetupBackgroundLogger(logPath string) (func() error, error) {
+	file, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+	if err != nil {
+		return nil, err
+	}
+
+	SetupLogger(file)
+	return file.Close, nil
+}
+
 func init() {
-	SetupLogger()
+	SetupLogger(os.Stdout)
 }
 
 func NewDaLog(w io.Writer, s func(rec slog.Record) string, opts *slog.HandlerOptions) slog.Handler {

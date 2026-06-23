@@ -8,6 +8,7 @@ import (
 	"os"
 	"wget/internal/config"
 	"wget/internal/downloader"
+	"wget/internal/utils"
 
 	"github.com/spf13/cobra"
 )
@@ -38,17 +39,28 @@ Examples:
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
+		var closeLog func() error
+		if opts.Background {
+			closeFn, err := utils.SetupBackgroundLogger("wget-log")
+			if err != nil {
+				return err
+			}
+			closeLog = closeFn
+		}
+		if closeLog != nil {
+			defer closeLog()
+		}
+
+		opts.ShouldRender = !opts.Background && !opts.Mirror
+
 		if opts.InputFile != "" {
-			opts.ShouldRender = true
 			return downloader.DownloadFromFile(&opts)
 		}
 
 		if opts.Mirror {
-			opts.ShouldRender = false
 			return downloader.MirrorWebsite(&opts)
 		}
 
-		opts.ShouldRender = true
 		return downloader.DownloadOne(&opts)
 	},
 }
