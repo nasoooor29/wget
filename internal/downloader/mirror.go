@@ -1,8 +1,11 @@
 package downloader
 
 import (
+	"bytes"
+	"io"
 	"log/slog"
 	"net/url"
+	"strings"
 	"wget/internal/config"
 
 	"github.com/PuerkitoBio/goquery"
@@ -12,6 +15,7 @@ type Crawler struct {
 	Client  *config.CustomHttpClient
 	Root    *url.URL
 	Visited map[string]bool
+	Opts    *config.Options
 }
 
 func MirrorWebsite(opts *config.Options) error {
@@ -28,7 +32,7 @@ func MirrorWebsite(opts *config.Options) error {
 		return err
 	}
 
-	c := NewCrawler(u, client)
+	c := NewCrawler(u, client, opts)
 	errs := c.Crawl(u)
 	if errs != nil {
 		slog.Error("failed to crawl website", "err", errs)
@@ -38,11 +42,12 @@ func MirrorWebsite(opts *config.Options) error {
 	return nil
 }
 
-func NewCrawler(root *url.URL, client *config.CustomHttpClient) *Crawler {
+func NewCrawler(root *url.URL, client *config.CustomHttpClient, opts *config.Options) *Crawler {
 	return &Crawler{
 		Client:  client,
 		Root:    root,
 		Visited: make(map[string]bool),
+		Opts:    opts,
 	}
 }
 
@@ -74,7 +79,20 @@ func (c *Crawler) Crawl(u *url.URL) error {
 		slog.Warn("Non-OK HTTP status", "status", res.Status, "url", u.String())
 		return nil
 	}
-	doc, err := goquery.NewDocumentFromReader(res.Body)
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return err
+	}
+
+	if err := saveMirroredResponse(c.Opts, res.Request.URL, body); err != nil {
+		return err
+	}
+
+	if !isHTMLResponse(res.Header.Get("Content-Type"), res.Request.URL.Path) {
+		return nil
+	}
+
+	doc, err := goquery.NewDocumentFromReader(bytes.NewReader(body))
 	if err != nil {
 		return err
 	}
@@ -108,6 +126,12 @@ func (c *Crawler) Crawl(u *url.URL) error {
 
 	return nil
 
+}
+func isHTMLResponse(contentType string, currentPath string) bool {
+	if strings.Contains(strings.ToLower(contentType), "text/html") {
+		return true
+	}
+	return currentPath == "" || currentPath == "/" || strings.HasSuffix(currentPath, ".html") || strings.HasSuffix(currentPath, ".htm")
 }
 
 func (c *Crawler) normalizeURL(raw string) (*url.URL, error) {
