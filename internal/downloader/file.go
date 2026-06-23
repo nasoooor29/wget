@@ -6,15 +6,17 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"sync"
 	"wget/internal/config"
 )
 
 func DownloadFromFile(opts *config.Options) error {
-	accumlatedErrors := []error{}
 	content, err := os.ReadFile(opts.InputFile)
 	if err != nil {
 		return err
 	}
+
+	validInputs := []string{}
 	for _, line := range strings.Split(string(content), "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" {
@@ -26,16 +28,34 @@ func DownloadFromFile(opts *config.Options) error {
 			continue
 		}
 
-		child := *opts
-		child.URL = line
-		if err := DownloadOne(&child); err != nil {
-			slog.Error("failed to download URL from input file", "url", line, "err", err)
-			accumlatedErrors = append(accumlatedErrors, err)
-		}
+		validInputs = append(validInputs, line)
 	}
 
-	if len(accumlatedErrors) == 0 {
+	wg := sync.WaitGroup{}
+	mu := sync.Mutex{}
+	runErrs := []error{}
+
+	for _, line := range validInputs {
+		line := line
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			child := *opts
+			child.URL = line
+			if err := DownloadOne(&child); err != nil {
+				slog.Error("failed to download URL from input file", "url", line, "err", err)
+				mu.Lock()
+				runErrs = append(runErrs, err)
+				mu.Unlock()
+			}
+		}()
+	}
+
+	wg.Wait()
+
+	if len(runErrs) == 0 {
 		return nil
 	}
-	return errors.Join(accumlatedErrors...)
+	return errors.Join(runErrs...)
 }
