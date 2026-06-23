@@ -8,7 +8,6 @@ import (
 	"os"
 	"wget/internal/config"
 	"wget/internal/downloader"
-	"wget/internal/mirror"
 
 	"github.com/spf13/cobra"
 )
@@ -46,7 +45,7 @@ Examples:
 
 		if opts.Mirror {
 			opts.ShouldRender = false
-			return mirror.MirrorWebsite(&opts)
+			return downloader.MirrorWebsite(&opts)
 		}
 
 		opts.ShouldRender = true

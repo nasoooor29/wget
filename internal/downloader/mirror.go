@@ -1,4 +1,4 @@
-package mirror
+package downloader
 
 import (
 	"log/slog"
