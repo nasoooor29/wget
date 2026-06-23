@@ -32,3 +32,19 @@ func ParseRateLimit(value string) (int64, error) {
 
 	return number * multiplier, nil
 }
+func FormatBytes(value int64) string {
+	if value < 1024 {
+		return fmt.Sprintf("%d B", value)
+	}
+
+	units := []string{"KiB", "MiB", "GiB", "TiB"}
+	current := float64(value)
+	for _, unit := range units {
+		current /= 1024
+		if current < 1024 || unit == units[len(units)-1] {
+			return fmt.Sprintf("%.1f %s", current, unit)
+		}
+	}
+
+	return fmt.Sprintf("%d B", value)
+}

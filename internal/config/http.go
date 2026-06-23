@@ -16,13 +16,13 @@ func NewHTTPClient(conf *Options) (*http.Client, error) {
 		return nil, err
 	}
 	if rateLimit > 0 {
-		slog.Info("Rate limit set", "bytes/sec", rateLimit)
+		slog.Debug("Rate limit set", "bytes/sec", rateLimit)
 	}
 	if conf.Timeout <= 0 {
 		slog.Warn("Timeout is not set or invalid, using default 30 seconds")
 		conf.Timeout = 30 // default timeout in seconds
 	}
-	slog.Info("Timeout set", "seconds", conf.Timeout)
+	slog.Debug("Timeout set", "seconds", conf.Timeout)
 
 	return &http.Client{
 		Timeout:   time.Duration(conf.Timeout) * time.Second, // important: large downloads should not timeout
@@ -51,11 +51,28 @@ func (t *RateLimitTransport) RoundTrip(req *http.Request) (*http.Response, error
 	if err != nil {
 		return nil, err
 	}
-	limiter := rate.NewLimiter(rate.Limit(t.BytesPerSec), int(t.BytesPerSec))
+	totalSize := resp.ContentLength
+	isUnkownSize := totalSize <= 0
+	if totalSize <= 0 {
+		slog.Debug("Content length is unknown, will use spinner for progress indication")
+	}
 
-	resp.Body = &RateLimitedReader{
-		ReadCloser: resp.Body,
-		limiter:    limiter,
+	var limiter *rate.Limiter
+	if t.BytesPerSec > 0 {
+		burst := int(t.BytesPerSec)
+		if burst < 1 {
+			burst = 1
+		}
+		limiter = rate.NewLimiter(rate.Limit(t.BytesPerSec), burst)
+	}
+
+	resp.Body = &customReader{
+		ReadCloser:     resp.Body,
+		limiter:        limiter,
+		maxChunkBytes:  int(t.BytesPerSec),
+		totalSizeBytes: totalSize,
+		currentBytes:   0,
+		isUnknownSize:  isUnkownSize,
 	}
 
 	return resp, nil
