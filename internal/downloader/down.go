@@ -51,7 +51,15 @@ func DownloadOne(opts *config.Options) error {
 	return err
 }
 
-func saveMirroredResponse(opts *config.Options, targetURL *url.URL, body []byte) error {
+func saveMirroredResponse(opts *config.Options, targetURL *url.URL, body []byte, crawler *Crawler, isHTML bool) error {
+	if crawler != nil && isHTML {
+		convertedBody, err := crawler.convertMirroredLinks(targetURL, body)
+		if err != nil {
+			return err
+		}
+		body = convertedBody
+	}
+
 	targetPath := resolveOutputPath(opts, targetURL)
 	slog.Debug("resolved output path", "path", targetPath)
 

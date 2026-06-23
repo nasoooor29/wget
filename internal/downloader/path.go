@@ -51,3 +51,56 @@ func mirrorRelativePath(u *url.URL) string {
 
 	return cleanPath
 }
+
+func matchesFileSuffixes(currentPath string, suffixes []string) bool {
+	if len(suffixes) == 0 {
+		return false
+	}
+
+	currentExt := strings.TrimPrefix(strings.ToLower(path.Ext(currentPath)), ".")
+	if currentExt == "" {
+		return false
+	}
+
+	for _, suffix := range suffixes {
+		normalized := strings.TrimSpace(strings.ToLower(strings.TrimPrefix(suffix, ".")))
+		if normalized != "" && currentExt == normalized {
+			return true
+		}
+	}
+
+	return false
+}
+
+func matchesPathPrefixes(currentPath string, prefixes []string) bool {
+	if len(prefixes) == 0 {
+		return false
+	}
+
+	currentPath = normalizeMirrorPath(currentPath)
+	for _, prefix := range prefixes {
+		normalized := normalizeMirrorPath(prefix)
+		if normalized == "" || normalized == "/" {
+			continue
+		}
+		if currentPath == normalized || strings.HasPrefix(currentPath, normalized+"/") {
+			return true
+		}
+	}
+
+	return false
+}
+
+func normalizeMirrorPath(value string) string {
+	if value == "" {
+		return "/"
+	}
+	if !strings.HasPrefix(value, "/") {
+		value = "/" + value
+	}
+	cleaned := path.Clean(value)
+	if cleaned == "." {
+		return "/"
+	}
+	return cleaned
+}
