@@ -56,7 +56,9 @@ func (r *customReader) Close() error {
 func (r *customReader) finish() {
 	r.finishOnce.Do(func() {
 		r.render(true)
-		fmt.Fprintln(os.Stderr)
+		if r.shouldRender {
+			fmt.Fprintln(os.Stderr)
+		}
 	})
 }
 
