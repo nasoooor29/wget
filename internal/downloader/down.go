@@ -29,7 +29,6 @@ func DownloadOne(opts *config.Options) error {
 	}
 
 	targetPath := resolveOutputPath(opts, resp.Request.URL)
-	slog.Debug("resolved output path", "path", targetPath)
 
 	if err := os.MkdirAll(filepath.Dir(targetPath), 0o755); err != nil {
 		slog.Error("failed to create directories", "err", err, "path", targetPath)

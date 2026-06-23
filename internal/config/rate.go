@@ -27,7 +27,7 @@ func (t *RateLimitTransport) RoundTrip(req *http.Request) (*http.Response, error
 	if err != nil {
 		return nil, err
 	}
-	slog.Info("status", "code", resp.Status, "url", req.URL.String())
+	slog.Info("", "status code", resp.Status, "url", req.URL.String())
 	totalSize := resp.ContentLength
 
 	// content size: 56370 [~0.06MB]
