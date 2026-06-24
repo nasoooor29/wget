@@ -163,9 +163,14 @@ func (c *Crawler) shouldSkipURL(u *url.URL) bool {
 		return false
 	}
 	if matchesPathPrefixes(u.Path, c.Opts.Exclude) {
+		slog.Info("Skipping excluded URL", "url", u.String())
 		return true
 	}
-	return matchesFileSuffixes(u.Path, c.Opts.Reject)
+	if matchesFileSuffixes(u.Path, c.Opts.Reject) {
+		slog.Info("Skipping rejected URL", "url", u.String())
+		return true
+	}
+	return false
 }
 
 func (c *Crawler) convertMirroredLinks(currentURL *url.URL, body []byte) ([]byte, error) {

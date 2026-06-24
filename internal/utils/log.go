@@ -6,6 +6,7 @@ import (
 	"io"
 	"log/slog"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 )
@@ -140,6 +141,8 @@ func DaLogStyleLongType1(rec slog.Record) string {
 		if fn != nil {
 			file, line := fn.FileLine(rec.PC)
 			source = fmt.Sprintf("%s:%d", strings.TrimPrefix(file, wd+"/"), line)
+			// just the fileName:lineNumber
+			source = fmt.Sprintf("%s:%d", filepath.Base(file), line)
 		}
 	}
 
