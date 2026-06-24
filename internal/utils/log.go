@@ -133,6 +133,8 @@ func MakeBold(str string) string {
 }
 
 func DaLogStyleLongType1(rec slog.Record) string {
+	const messageWidth = 32
+
 	// Extract the source file and line number
 	wd, _ := os.Getwd()
 	source := ""
@@ -148,10 +150,11 @@ func DaLogStyleLongType1(rec slog.Record) string {
 
 	// Build the log entry
 	result := fmt.Sprintf(
-		"[%v]\t%v\t%v\t%v\t",
+		"[%v]\t%v\t%v\t%-*s\t",
 		rec.Time.Format("2006-01-02 15:04:05"),
 		ColorByLevel(rec.Level.String(), rec.Level, true, false),
 		source, // Include source info
+		messageWidth,
 		rec.Message,
 	)
 	rec.Attrs(func(a slog.Attr) bool {
