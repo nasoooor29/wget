@@ -6,6 +6,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"os/exec"
 
 	"wget/internal/config"
 	"wget/internal/downloader"
@@ -39,12 +40,10 @@ Examples:
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
-		// start := time.Now()
-		// // fmt.Println("starting download", "url", opts.URL, "start_time", start.Format(time.RFC3339))
-		// defer func() {
-		// 	end := time.Now()
-		// 	// fmt.Println("finished download", "url", opts.URL, "end_time", end.Format(time.RFC3339), "duration", end.Sub(start))
-		// }()
+		if opts.Background && os.Getenv("WGET_BACKGROUND_CHILD") == "" {
+			return runInBackground()
+		}
+
 		opts.ShouldRender = !opts.Background && !opts.Mirror
 
 		if opts.InputFile != "" {
@@ -57,6 +56,47 @@ Examples:
 
 		return downloader.DownloadOne(&opts)
 	},
+}
+
+func runInBackground() error {
+	logPath := nextBackgroundLogPath()
+	logFile, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0o644)
+	if err != nil {
+		return err
+	}
+	defer logFile.Close()
+
+	exe, err := os.Executable()
+	if err != nil {
+		return err
+	}
+
+	cmd := exec.Command(exe, os.Args[1:]...)
+	cmd.Stdout = logFile
+	cmd.Stderr = logFile
+	cmd.Env = append(os.Environ(), "WGET_BACKGROUND_CHILD=1")
+
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+
+	fmt.Printf("Continuing in background, pid %d.\n", cmd.Process.Pid)
+	fmt.Printf("Output will be written to '%s'.\n", logPath)
+	return nil
+}
+
+func nextBackgroundLogPath() string {
+	base := "wget-log"
+	if _, err := os.Stat(base); os.IsNotExist(err) {
+		return base
+	}
+
+	for i := 1; ; i++ {
+		candidate := fmt.Sprintf("%s.%d", base, i)
+		if _, err := os.Stat(candidate); os.IsNotExist(err) {
+			return candidate
+		}
+	}
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
