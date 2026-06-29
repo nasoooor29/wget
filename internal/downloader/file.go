@@ -43,6 +43,7 @@ func DownloadFromFile(opts *config.Options) error {
 
 			child := *opts
 			child.URL = line
+			child.ShouldRender = false
 			if err := DownloadOne(&child); err != nil {
 				fmt.Println("failed to download URL from input file", "url", line, "err", err)
 				mu.Lock()
