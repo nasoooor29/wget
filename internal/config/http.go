@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"net/http"
 	"time"
+
 	"wget/internal/utils"
 )
 
@@ -30,6 +31,9 @@ func NewHTTPClient(conf *Options) (*CustomHttpClient, error) {
 		Client: &http.Client{
 			Timeout: time.Duration(conf.Timeout) * time.Second, // important: large downloads should not timeout
 			Transport: &RateLimitTransport{
+				Base: &http.Transport{
+					DisableCompression: true,
+				},
 				BytesPerSec:  rateLimit,
 				ShouldRender: conf.ShouldRender,
 			},

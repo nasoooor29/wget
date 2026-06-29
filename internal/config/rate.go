@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"net/http"
 	"time"
+
 	"wget/internal/utils"
 
 	"golang.org/x/time/rate"
@@ -16,14 +17,9 @@ type RateLimitTransport struct {
 }
 
 func (t *RateLimitTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	base := t.Base
-	if base == nil {
-		base = http.DefaultTransport
-	}
-
 	slog.Info("sending request, awaiting response...", "url", req.URL.String())
 
-	resp, err := base.RoundTrip(req)
+	resp, err := t.Base.RoundTrip(req)
 	if err != nil {
 		return nil, err
 	}
