@@ -3,7 +3,6 @@ package downloader
 import (
 	"fmt"
 	"io"
-	"log/slog"
 	"net/http"
 	"net/url"
 	"os"
@@ -26,20 +25,20 @@ func DownloadOne(opts *config.Options) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
-		slog.Error("download failed", "status", resp.Status, "url", opts.URL)
+		fmt.Println("download failed", "status", resp.Status, "url", opts.URL)
 		return fmt.Errorf("download failed: %s", resp.Status)
 	}
 
 	targetPath := resolveOutputPath(opts, resp.Request.URL)
 
 	if err := os.MkdirAll(filepath.Dir(targetPath), 0o755); err != nil {
-		slog.Error("failed to create directories", "err", err, "path", targetPath)
+		fmt.Println("failed to create directories", "err", err, "path", targetPath)
 		return err
 	}
 
 	out, err := os.Create(targetPath)
 	if err != nil {
-		slog.Error("failed to create output file", "err", err, "path", targetPath)
+		fmt.Println("failed to create output file", "err", err, "path", targetPath)
 		return err
 	}
 	defer out.Close()
@@ -47,7 +46,7 @@ func DownloadOne(opts *config.Options) error {
 	startedAt := time.Now()
 	written, err := io.Copy(out, resp.Body)
 	if err != nil {
-		slog.Error("failed to write response body to file", "err", err, "path", targetPath)
+		fmt.Println("failed to write response body to file", "err", err, "path", targetPath)
 		return err
 	}
 	totalSize := resp.ContentLength
@@ -86,16 +85,16 @@ func saveMirroredResponse(opts *config.Options, targetURL *url.URL, body []byte,
 	}
 
 	targetPath := resolveOutputPath(opts, targetURL)
-	slog.Debug("resolved output path", "path", targetPath)
+	fmt.Println("resolved output path", "path", targetPath)
 
 	if err := os.MkdirAll(filepath.Dir(targetPath), 0o755); err != nil {
-		slog.Error("failed to create directories", "err", err, "path", targetPath)
+		fmt.Println("failed to create directories", "err", err, "path", targetPath)
 		return err
 	}
 
 	out, err := os.Create(targetPath)
 	if err != nil {
-		slog.Error("failed to create output file", "err", err, "path", targetPath)
+		fmt.Println("failed to create output file", "err", err, "path", targetPath)
 		return err
 	}
 	defer out.Close()

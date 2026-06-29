@@ -3,6 +3,7 @@ package downloader
 import (
 	"fmt"
 	"net/url"
+	"os"
 	"path"
 	"path/filepath"
 	"strings"
@@ -23,6 +24,7 @@ func resolveOutputPath(opts *config.Options, u *url.URL) string {
 	if baseDir == "" {
 		baseDir = "."
 	}
+	baseDir = expandHomeDir(baseDir)
 
 	if opts.Mirror {
 		baseDir = filepath.Join(baseDir, u.Host)
@@ -39,6 +41,22 @@ func resolveOutputPath(opts *config.Options, u *url.URL) string {
 	finalPath := filepath.Join(baseDir, name)
 	fmt.Printf("Saving to: %s\n\n", name)
 	return finalPath
+}
+
+func expandHomeDir(dir string) string {
+	if dir == "~" {
+		home, err := os.UserHomeDir()
+		if err == nil {
+			return home
+		}
+	}
+	if strings.HasPrefix(dir, "~/") {
+		home, err := os.UserHomeDir()
+		if err == nil {
+			return filepath.Join(home, strings.TrimPrefix(dir, "~/"))
+		}
+	}
+	return dir
 }
 
 func mirrorRelativePath(u *url.URL) string {

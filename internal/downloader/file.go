@@ -2,7 +2,7 @@ package downloader
 
 import (
 	"errors"
-	"log/slog"
+	"fmt"
 	"net/url"
 	"os"
 	"strings"
@@ -24,7 +24,7 @@ func DownloadFromFile(opts *config.Options) error {
 		}
 		uu, err := url.Parse(line)
 		if err != nil || uu.Scheme == "" || uu.Host == "" {
-			slog.Warn("invalid URL in input file", "url", line)
+			fmt.Println("invalid URL in input file", "url", line)
 			continue
 		}
 
@@ -44,7 +44,7 @@ func DownloadFromFile(opts *config.Options) error {
 			child := *opts
 			child.URL = line
 			if err := DownloadOne(&child); err != nil {
-				slog.Error("failed to download URL from input file", "url", line, "err", err)
+				fmt.Println("failed to download URL from input file", "url", line, "err", err)
 				mu.Lock()
 				runErrs = append(runErrs, err)
 				mu.Unlock()

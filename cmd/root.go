@@ -9,7 +9,6 @@ import (
 
 	"wget/internal/config"
 	"wget/internal/downloader"
-	"wget/internal/utils"
 
 	"github.com/spf13/cobra"
 )
@@ -46,18 +45,6 @@ Examples:
 		// 	end := time.Now()
 		// 	// fmt.Println("finished download", "url", opts.URL, "end_time", end.Format(time.RFC3339), "duration", end.Sub(start))
 		// }()
-		var closeLog func() error
-		if opts.Background {
-			closeFn, err := utils.SetupBackgroundLogger("wget-log")
-			if err != nil {
-				return err
-			}
-			closeLog = closeFn
-		}
-		if closeLog != nil {
-			defer closeLog()
-		}
-
 		opts.ShouldRender = !opts.Background && !opts.Mirror
 
 		if opts.InputFile != "" {

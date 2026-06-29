@@ -2,6 +2,8 @@
 first-cli
 *.tar.gz*
 
+wget-log*
+
 
 cobra.dev
 /reboot01.com

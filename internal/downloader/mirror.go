@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"log/slog"
 	"net/url"
 	"path/filepath"
 	"strings"
@@ -25,21 +24,21 @@ type Crawler struct {
 func MirrorWebsite(opts *config.Options) error {
 	u, err := url.Parse(opts.URL)
 	if err != nil {
-		slog.Error("failed to parse URL", "err", err, "url", opts.URL)
+		fmt.Println("failed to parse URL", "err", err, "url", opts.URL)
 		return err
 	}
 	u.Path = "/"
 
 	client, err := config.NewHTTPClient(opts)
 	if err != nil {
-		slog.Error("failed to create HTTP client", "err", err)
+		fmt.Println("failed to create HTTP client", "err", err)
 		return err
 	}
 
 	c := NewCrawler(u, client, opts)
 	errs := c.Crawl(u)
 	if errs != nil {
-		slog.Error("failed to crawl website", "err", errs)
+		fmt.Println("failed to crawl website", "err", errs)
 		return errs
 	}
 
@@ -79,13 +78,13 @@ func (c *Crawler) Crawl(u *url.URL) error {
 	fmt.Println("Crawling URL", "url", u.String())
 	res, err := c.Client.Get(u.String())
 	if err != nil {
-		slog.Error("Could not fetch URL", "err", err, "url", u.String())
+		fmt.Println("Could not fetch URL", "err", err, "url", u.String())
 		return err
 	}
 	defer res.Body.Close()
 
 	if res.StatusCode < 200 || res.StatusCode >= 300 {
-		slog.Warn("Non-OK HTTP status", "status", res.Status, "url", u.String())
+		fmt.Println("Non-OK HTTP status", "status", res.Status, "url", u.String())
 		return nil
 	}
 	body, err := io.ReadAll(res.Body)
@@ -126,14 +125,14 @@ func (c *Crawler) Crawl(u *url.URL) error {
 	for _, link := range links {
 		linkURL, err := c.normalizeURL(u, link)
 		if err != nil {
-			slog.Warn("Failed to normalize URL", "err", err, "link", link)
+			fmt.Println("Failed to normalize URL", "err", err, "link", link)
 			continue
 		}
 		if c.shouldSkipURL(linkURL) {
 			continue
 		}
 		if err := c.Crawl(linkURL); err != nil {
-			slog.Error("Failed to crawl URL", "err", err, "url", linkURL.String())
+			fmt.Println("Failed to crawl URL", "err", err, "url", linkURL.String())
 		}
 	}
 
