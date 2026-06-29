@@ -1,6 +1,6 @@
 
 first-cli
-*.tar.gz
+*.tar.gz*
 
 
 cobra.dev

@@ -2,11 +2,13 @@ package downloader
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/url"
 	"path/filepath"
 	"strings"
+
 	"wget/internal/config"
 
 	"github.com/PuerkitoBio/goquery"
@@ -70,11 +72,11 @@ func (c *Crawler) Crawl(u *url.URL) error {
 		return nil
 	}
 	if key != c.Seed && c.shouldSkipURL(u) {
-		slog.Info("Skipping mirrored URL", "url", u.String())
+		fmt.Println("Skipping mirrored URL", u.String())
 		return nil
 	}
 
-	slog.Info("Crawling URL", "url", u.String())
+	fmt.Println("Crawling URL", "url", u.String())
 	res, err := c.Client.Get(u.String())
 	if err != nil {
 		slog.Error("Could not fetch URL", "err", err, "url", u.String())
@@ -136,8 +138,8 @@ func (c *Crawler) Crawl(u *url.URL) error {
 	}
 
 	return nil
-
 }
+
 func isHTMLResponse(contentType string, currentPath string) bool {
 	if strings.Contains(strings.ToLower(contentType), "text/html") {
 		return true
@@ -154,6 +156,7 @@ func (c *Crawler) normalizeURL(base *url.URL, raw string) (*url.URL, error) {
 
 	return base.ResolveReference(u), nil
 }
+
 func (c *Crawler) sameDomain(u *url.URL) bool {
 	return u.Host == c.Root.Host
 }
@@ -163,11 +166,11 @@ func (c *Crawler) shouldSkipURL(u *url.URL) bool {
 		return false
 	}
 	if matchesPathPrefixes(u.Path, c.Opts.Exclude) {
-		slog.Info("Skipping excluded URL", "url", u.String())
+		fmt.Println("Skipping excluded URL", "url", u.String())
 		return true
 	}
 	if matchesFileSuffixes(u.Path, c.Opts.Reject) {
-		slog.Info("Skipping rejected URL", "url", u.String())
+		fmt.Println("Skipping rejected URL", "url", u.String())
 		return true
 	}
 	return false

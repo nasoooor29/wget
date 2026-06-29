@@ -1,11 +1,12 @@
 package downloader
 
 import (
-	"log/slog"
+	"fmt"
 	"net/url"
 	"path"
 	"path/filepath"
 	"strings"
+
 	"wget/internal/config"
 )
 
@@ -26,17 +27,17 @@ func resolveOutputPath(opts *config.Options, u *url.URL) string {
 	if opts.Mirror {
 		baseDir = filepath.Join(baseDir, u.Host)
 		finalPath := filepath.Join(baseDir, filepath.FromSlash(mirrorRelativePath(u)))
-		slog.Info("saving file to:", "file_name", finalPath)
+		fmt.Printf("Saving to: %s\n\n", name)
 		return finalPath
 	}
 
 	if baseDir == "." {
-		slog.Info("saving file to:", "file_name", name)
+		fmt.Printf("Saving to: %s\n\n", name)
 		return name
 	}
 
 	finalPath := filepath.Join(baseDir, name)
-	slog.Info("saving file to:", "file_name", finalPath)
+	fmt.Printf("Saving to: %s\n\n", name)
 	return finalPath
 }
 

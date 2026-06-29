@@ -6,9 +6,6 @@ import (
 	"io"
 	"log/slog"
 	"os"
-	"path/filepath"
-	"runtime"
-	"strings"
 )
 
 func SetupLogger(w io.Writer) {
@@ -136,27 +133,29 @@ func DaLogStyleLongType1(rec slog.Record) string {
 	const messageWidth = 32
 
 	// Extract the source file and line number
-	wd, _ := os.Getwd()
-	source := ""
-	if rec.PC != 0 {
-		fn := runtime.FuncForPC(rec.PC)
-		if fn != nil {
-			file, line := fn.FileLine(rec.PC)
-			source = fmt.Sprintf("%s:%d", strings.TrimPrefix(file, wd+"/"), line)
-			// just the fileName:lineNumber
-			source = fmt.Sprintf("%s:%d", filepath.Base(file), line)
-		}
-	}
+	// wd, _ := os.Getwd()
+	// source := ""
+	// if rec.PC != 0 {
+	// 	fn := runtime.FuncForPC(rec.PC)
+	// 	if fn != nil {
+	// 		file, line := fn.FileLine(rec.PC)
+	// 		source = fmt.Sprintf("%s:%d", strings.TrimPrefix(file, wd+"/"), line)
+	// 		// just the fileName:lineNumber
+	// 		source = fmt.Sprintf("%s:%d", filepath.Base(file), line)
+	// 	}
+	// }
+
+	result := rec.Message
 
 	// Build the log entry
-	result := fmt.Sprintf(
-		"[%v]\t%v\t%v\t%-*s\t",
-		rec.Time.Format("2006-01-02 15:04:05"),
-		ColorByLevel(rec.Level.String(), rec.Level, true, false),
-		source, // Include source info
-		messageWidth,
-		rec.Message,
-	)
+	// result := fmt.Sprintf(
+	// 	"[%v]\t%v\t%v\t%-*s\t",
+	// 	rec.Time.Format("2006-01-02 15:04:05"),
+	// 	ColorByLevel(rec.Level.String(), rec.Level, true, false),
+	// 	source, // Include source info
+	// 	messageWidth,
+	// 	rec.Message,
+	// )
 	rec.Attrs(func(a slog.Attr) bool {
 		result += fmt.Sprintf("%v: %v\t", ColorByLevel(a.Key, rec.Level, false, false), a.Value)
 		return true

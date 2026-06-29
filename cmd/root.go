@@ -5,9 +5,8 @@ package cmd
 
 import (
 	"fmt"
-	"log/slog"
 	"os"
-	"time"
+
 	"wget/internal/config"
 	"wget/internal/downloader"
 	"wget/internal/utils"
@@ -41,12 +40,12 @@ Examples:
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
-		start := time.Now()
-		slog.Info("starting download", "url", opts.URL, "start_time", start.Format(time.RFC3339))
-		defer func() {
-			end := time.Now()
-			slog.Info("finished download", "url", opts.URL, "end_time", end.Format(time.RFC3339), "duration", end.Sub(start))
-		}()
+		// start := time.Now()
+		// // fmt.Println("starting download", "url", opts.URL, "start_time", start.Format(time.RFC3339))
+		// defer func() {
+		// 	end := time.Now()
+		// 	// fmt.Println("finished download", "url", opts.URL, "end_time", end.Format(time.RFC3339), "duration", end.Sub(start))
+		// }()
 		var closeLog func() error
 		if opts.Background {
 			closeFn, err := utils.SetupBackgroundLogger("wget-log")
@@ -105,5 +104,4 @@ func init() {
 	rootCmd.Flags().StringSliceVarP(&opts.Exclude, "exclude", "X", nil, "exclude paths, e.g. /img,/css")
 	rootCmd.Flags().BoolVar(&opts.ConvertLinks, "convert-links", false, "convert links for offline viewing")
 	rootCmd.Flags().IntVar(&opts.Timeout, "timeout", 30, "set timeout in seconds")
-
 }

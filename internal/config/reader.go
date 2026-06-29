@@ -8,7 +8,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-	"wget/internal/utils"
 
 	"golang.org/x/time/rate"
 )
@@ -26,6 +25,7 @@ type customReader struct {
 	spinnerIndex   int
 	finishOnce     sync.Once
 	shouldRender   bool
+	fileName       string
 }
 
 func (r *customReader) Read(p []byte) (int, error) {
@@ -58,9 +58,6 @@ func (r *customReader) Close() error {
 func (r *customReader) finish() {
 	r.finishOnce.Do(func() {
 		r.render(true)
-		if r.shouldRender {
-			fmt.Fprintln(os.Stderr)
-		}
 	})
 }
 
@@ -76,7 +73,7 @@ func (r *customReader) render(done bool) {
 }
 
 func (r *customReader) renderBar(done bool) {
-	const barWidth = 28
+	const barWidth = 64
 	total := r.totalSizeBytes
 	if total <= 0 {
 		total = r.currentBytes
@@ -90,32 +87,19 @@ func (r *customReader) renderBar(done bool) {
 		}
 	}
 
-	filled := int(percent * barWidth)
-	if filled > barWidth {
-		filled = barWidth
+	filled := int(percent * float64(barWidth))
+	if filled < 0 {
+		filled = 0
 	}
-	bar := strings.Repeat("█", filled) + strings.Repeat("░", barWidth-filled)
-
-	status := "Downloading"
-	if done {
-		status = "Done"
+	if filled >= barWidth {
+		filled = barWidth - 1
 	}
-
-	eta := "ETA --:--:--"
-	if total > 0 && r.currentBytes > 0 && r.currentBytes < total {
-		elapsed := time.Since(r.startedAt)
-		if elapsed > 0 {
-			bytesRemaining := total - r.currentBytes
-			estimatedSeconds := float64(bytesRemaining) * float64(elapsed) / float64(r.currentBytes) / float64(time.Second)
-			if estimatedSeconds > 0 {
-				eta = fmt.Sprintf("ETA %s", utils.FormatDuration(time.Duration(estimatedSeconds)*time.Second))
-			}
-		}
-	} else if done {
-		eta = "ETA 00:00:00"
+	bar := strings.Repeat("=", filled) + ">" + strings.Repeat(" ", barWidth-filled-1)
+	if done || percent >= 1 {
+		bar = strings.Repeat("=", barWidth) + ">"
 	}
 
-	line := fmt.Sprintf("%s [%s] %6.2f%% (%s/%s) %s", status, bar, percent*100, utils.FormatBytes(r.currentBytes), utils.FormatBytes(total), eta)
+	line := fmt.Sprintf("%-36s %3.0f%%[%s] %7s %9s/s    in %.1fs", r.fileName, percent*100, bar, formatProgressBytes(r.currentBytes), formatProgressSpeed(r.currentBytes, time.Since(r.startedAt)), time.Since(r.startedAt).Seconds())
 	r.writeLine(line, done)
 }
 
@@ -128,8 +112,41 @@ func (r *customReader) renderSpinner(done bool) {
 		status = "Done"
 	}
 
-	line := fmt.Sprintf("%s %s %s", status, frame, utils.FormatBytes(r.currentBytes))
+	line := fmt.Sprintf("%s %s %s", status, frame, formatProgressBytes(r.currentBytes))
 	r.writeLine(line, done)
+}
+
+func formatProgressBytes(value int64) string {
+	if value < 1024 {
+		return fmt.Sprintf("%d", value)
+	}
+	units := []string{"K", "M", "G", "T"}
+	current := float64(value)
+	for _, unit := range units {
+		current /= 1024
+		if current < 1024 || unit == units[len(units)-1] {
+			return fmt.Sprintf("%.2f%s", current, unit)
+		}
+	}
+	return fmt.Sprintf("%d", value)
+}
+
+func formatProgressSpeed(bytes int64, elapsed time.Duration) string {
+	if elapsed <= 0 {
+		return "0B"
+	}
+	bytesPerSecond := float64(bytes) / elapsed.Seconds()
+	if bytesPerSecond < 1000 {
+		return fmt.Sprintf("%.1fB", bytesPerSecond)
+	}
+	units := []string{"KB", "MB", "GB", "TB"}
+	for _, unit := range units {
+		bytesPerSecond /= 1000
+		if bytesPerSecond < 1000 || unit == units[len(units)-1] {
+			return fmt.Sprintf("%.1f%s", bytesPerSecond, unit)
+		}
+	}
+	return fmt.Sprintf("%.1fB", bytesPerSecond)
 }
 
 func (r *customReader) writeLine(line string, done bool) {
